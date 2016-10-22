@@ -563,7 +563,7 @@
                 },
                 select: function (event, ui) {
                     $('#genre-search').val(ui.item.name);
-                    //console.log(ui.item);
+                    console.log(ui.item);
                     initRootWithTrack(ui.item);
                     return false;
                 }
@@ -898,6 +898,7 @@
     }
 
     function create_table() {
+      console.log('creando Tabla');
       // Obtener la referencia del elemento body
       var treeContainer = document.getElementById("tree-container");
       //document.getElementById("left").removeChild(treeContainer);
@@ -978,7 +979,7 @@
 
     function init_deezer() {
       var url = "http://musicovery.com/api/V3/track.php?fct=getsimilar&id=deezer:track:2162450&popularitymin=1&popularitymax=50&songsnumber=25&bucket=id:deezer&limittobucket=true";
-      //console.log(currentApi.getDeezer(url));
+      console.log(currentApi.getDeezer(url));
       /*<script src="http://cdn-files.deezer.com/js/min/dz.js"></script>*/
       // Obtener la referencia del elemento body
       var treeContainer = document.getElementById("tree-container");
@@ -1035,9 +1036,12 @@
 
     function drawLastfmTree(trackName, artistName){
       /* Load some track info. */
+      console.log(trackName);
+      console.log(artistName);
       return new Promise(function (resolve, reject){
         lastfm.track.getSimilar({track: trackName, artist:artistName, limit: numberOfArtistsToShow}, {success: function(data){
             /* Use data. */
+            console.log(data);
             resolve(data);
           }, error: function(code, message){
             /* Show error message. */
