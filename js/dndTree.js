@@ -131,6 +131,35 @@ var dndTree = (function() {
         });
     }
 
+    function setChildrenAndUpdateForLastfmTrack(node) {
+        var name;
+        if(node.track.track){
+          name = node.track.track.name;
+        } else if(node.track){
+          name = node.track.name;
+        } else{
+          name = "";
+        }
+        AE.drawLastfmTree(name, node.artist.artist.name).then(function(tracks) {
+            if (!node.children) {
+                node.children = []
+            }
+            console.log(tracks.similartracks);
+            tracks.similartracks.track.forEach(function(track) {
+                node.children.push(
+                    {
+                        'track': track,
+                        'artist': node.artist,
+                        'children': null
+                    }
+                )
+                exploredArtistIds.push(track.name);
+            });
+            update(node);
+            centerNode(node);
+        });
+    }
+
     function initWithArtist(artist) {
         exploredArtistIds.push(artist.id);
         return {
@@ -156,6 +185,15 @@ var dndTree = (function() {
       }
     };
 
+    function initWithLastfmTrack(track, artist) {
+      //exploredArtistIds.push(track.id);
+      return {
+          'track' : track,
+          'artist' : artist,
+          'children': null,
+      }
+    };
+
     function isArtist(d) {
         return 'artist' in d;
     }
@@ -174,7 +212,7 @@ var dndTree = (function() {
                 removeExpandedId(node);
             });
         }
-        if(isArtist(d))
+        if(isArtist(d) && !isTrack(d))
         {
 
         }
@@ -197,19 +235,21 @@ var dndTree = (function() {
             update(d);
             centerNode(d);
         } else {
-            if (isArtist(d)) {
+            if (isArtist(d) && !isTrack(d)) {
               setChildrenAndUpdateForArtist(d);
             } else if (isGenre(d)) {
               setChildrenAndUpdateForGenre(d);
-            } else if (isTrack(d)) {
+            } else if (isTrack(d) && !isArtist(d)) {
               setChildrenAndUpdateForTrack(d);
+            } else if (isTrack(d) && isArtist(d)) {
+              setChildrenAndUpdateForLastfmTrack(d);
             }
         }
         return d;
     }
 
     function click(d) {
-        d = toggleChildren(d);
+      d = toggleChildren(d);
     }
 
     function update(source) {
@@ -252,7 +292,7 @@ var dndTree = (function() {
                 return "translate(" + source.y0 + "," + source.x0 + ")";
             })
             .on("mouseover", function(d) {
-                if ('artist' in d) {
+                if (('artist' in d) && !('track' in d)) {
                     AE.getInfo(d.artist);
                 }
             })
@@ -276,15 +316,29 @@ var dndTree = (function() {
                 .append("circle")
                 .attr("r", 32);
 
-
         nodeEnter.append("image")
             .attr("xlink:href", function(d) {
-                if (isArtist(d)) {
+    console.log(d);
+                if (isArtist(d) && !isTrack(d)) {
                   return AE.getSuitableImage(d.artist.images);
-                } else if(isTrack(d)){
+                } else if(isTrack(d) && !isArtist(d)){
                   return AE.getSuitableImage(d.track.album.images);
-                }else{
-                  return 'img/spotify.jpeg';
+                } else if(isTrack(d) && isArtist(d)){
+                  if(d.track.track) {
+                    if(d.track.track.album){
+                      return AE.getSuitableImage(d.track.track.album.image);
+                    }
+                  }else if(d.track) {
+                    if(d.track.image){
+                      return AE.getSuitableImage(d.track.image);
+                    } else if(d.artist.artist.image){
+                      return AE.getSuitableImage(d.artist.artist.image);
+                    }
+                  } else{
+                    return 'img/spotify.jpeg';
+                  }
+                } else{
+                    return 'img/spotify.jpeg';
                 }
             })
             .attr("x", "-32px")
@@ -292,7 +346,7 @@ var dndTree = (function() {
             .attr("clip-path", "url(#clipCircle" + clipPathId + ")")
             .attr("width",
               function(d) {
-                  if (isArtist(d)) {
+                  if (isArtist(d) && !isTrack(d)) {
                       var image = d.artist.images[1];
                       if (!image) {
                         return 64;
@@ -302,7 +356,7 @@ var dndTree = (function() {
                       } else {
                           return 64;
                       }
-                  } else if (isTrack(d)) {
+                  } else if (isTrack(d) && !isArtist(d)) {
                       var image = d.track.album.images[1];
                       if (!image) {
                         return 64;
@@ -312,13 +366,30 @@ var dndTree = (function() {
                       } else {
                           return 64;
                       }
+                  } else if (isTrack(d) && isArtist(d)) {
+                    var image;
+                    if(d.track.track){
+                      if(d.track.track.album){
+                        image = d.track.track.album.image[1];
+                      }
+                    } else if(d.track.image){
+                      image = d.track.image[1];
+                    }
+                    if (!image) {
+                      return 64;
+                    }
+                    if (image.width > image.height) {
+                        return 64 * (image.width / image.height)
+                    } else {
+                        return 64;
+                    }
                   } else {
                     return 64;
                   }
               })
             .attr("height",
               function(d) {
-                  if (isArtist(d)) {
+                  if (isArtist(d) && !isTrack(d)) {
 
                       var image = d.artist.images[1];
                       if (!image) {
@@ -344,10 +415,18 @@ var dndTree = (function() {
                 return "start";
             })
             .text(function(d) {
-                if (isArtist(d)) {
+                if (isArtist(d) && !isTrack(d)) {
                     return d.artist.name;
-                } if(isTrack(d)){
+                } if(isTrack(d) && !isArtist(d)){
                     return d.track.name;
+                }else if(isTrack(d) && isArtist(d)){
+                    if(d.track.track){
+                      return d.track.track.name;
+                    } else if(d.track){
+                      return d.track.name;
+                    } else{
+                      return "Unknown";
+                    }
                 }else if (isGenre(d)){
                     return "Genre:" + AE.toTitleCase(d.genre.name);
                 }
@@ -531,6 +610,15 @@ var dndTree = (function() {
           click(root);
         },
 
+        "setRootLastfmTrack" : function(track, artist) {
+          exploredArtistIds = []
+          root = initWithLastfmTrack(track, artist);
+          root.x0 = viewerHeight / 2;
+          root.y0 = 0;
+          update(root);
+          centerNode(root);
+          click(root);
+        },
         "getRoot": function() {
             return serializeTree();
         },

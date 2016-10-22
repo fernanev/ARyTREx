@@ -15,11 +15,11 @@
     var serverBasePath = "http://localhost:10000";
 
     var localApi = new localProxyApi(serverBasePath);
-    var spotifyWebApi = new SpotifyWebApi()
+    var spotifyWebApi = new SpotifyWebApi();
 
     var currentApi = localApi;
 
-    var loadAllGenresUri = serverBasePath + "/api/genres"
+    var loadAllGenresUri = serverBasePath + "/api/genres";
     //var loadArtistInfoUri = serverBasePath + "/api/artist-info/"
 
     var artistExplorerPlaylistName = "Saved Tracks from Artist Explorer";
@@ -29,6 +29,15 @@
     var savedTracks = [];
 
     var recommendedTracks = [];
+
+    /* Create a cache object */
+    var cache = new LastFMCache();
+    /* Create a LastFM object */
+    var lastfm = new LastFM({
+      apiKey    : 'fe2bd7d0d1d2433472a3d22bc3d0fa44',
+      apiSecret : 'cc1b12e446001ce591515959a26aaa83',
+      cache     : cache
+    });
 
     function addRecomTrack(track){
         var trackId=track.id;
@@ -80,7 +89,6 @@
           albumReleaseDate: albumReleaseDate,
           duration: duration
         })
-        console.log(recommendedTracks.length);
     }
     function getGenreArtistsUri(genreId) {
         return serverBasePath + "/api/genres/" + genreId + "/artists";
@@ -108,12 +116,7 @@
         var initArtistId = stripTrailingSlash(qs('artist_id')),
             initGenre = stripTrailingSlash(qs('genre')),
             initEntry = stripTrailingSlash(qs('tree'));
-        // console.log('artist');
-        // console.log(initArtistId);
-        // console.log('genre');
-        // console.log(initGenre);
-        // console.log('tree');
-        // console.log(initEntry);
+
         if (initEntry) {
             $.ajax({
                 url: serverBasePath + '/api/entries/' + initEntry
@@ -140,12 +143,12 @@
         });
 
         initContainer();
-
         var formArtist = document.getElementById('search-artist');
         formArtist.addEventListener('submit', function (e) {
             showCompletion = false;
             e.preventDefault();
             var search = document.getElementById('artist-search');
+            console.log('searching');
             currentApi.searchArtists(
                 search.value.trim(),
                 userCountry
@@ -185,7 +188,7 @@
 
     var allGenres = [];
 
-    loadAllGenres();
+    //loadAllGenres();
 
     function initRootWithArtist(artist) {
         dndTree.setRoot(artist);
@@ -206,7 +209,13 @@
 
     function initRootWithTrack(track) {
         dndTree.setRootTrack(track);
-        //$('#track-search').val('');
+        $('#track-search').val('');
+    }
+
+    function initRootWithLastfmTrack(track, artist) {
+        dndTree.setRootLastfmTrack(track, artist);
+        $('#artist-search').val('');
+        $('#track-search').val('');
     }
 
     function loadAllGenres() {
@@ -621,13 +630,23 @@
         if (images.length === 0) {
             return 'img/spotify.jpeg';
         }
-        images.forEach(function (image) {
-            if (image && image.width > minSize && image.width > 64) {
+        images.forEach(function(image) {
+            if (image && image.size > minSize && image.width > 64) {
                 return image.url;
+            }else if (image && image.size == "medium"){
+                return image["#text"].split(".png")[0];
             }
         });
+        if(images[images.length - 1].url){
+          return images[images.length - 1].url;
+        }else{
+          for(var image in images){
+            if(images[image].size == "medium") {
+              return images[image]["#text"].split(".png")[0];
+            }
+          }
 
-        return images[images.length - 1].url;
+        }
     }
 
     var currentLink;
@@ -858,11 +877,37 @@
         savedTracks = [];
         currentApi = localApi;
     }
+
+    function spotifyTree(){
+      var treeContainer = document.getElementById("tree-container");
+      //document.getElementById("left").removeChild(treeContainer);
+      treeContainer.style = "height: auto;"
+      var tableButton = document.getElementById("tableButton");
+      tableButton.innerHTML = "Create Table";
+      tableButton.setAttribute("onClick", "AE.create_table()");
+
+      var lastfmButton = document.getElementById("lastfmButton");
+      lastfmButton.innerHTML = "LastFM API";
+      lastfmButton.setAttribute("onClick", "AE.init_lastfm()");
+
+      var tableContainer = document.getElementById("table-container");
+      var table = document.getElementById("table");
+      if(table) {
+        tableContainer.removeChild(table);
+      }
+    }
+
     function create_table() {
       console.log('creando Tabla');
       // Obtener la referencia del elemento body
       var treeContainer = document.getElementById("tree-container");
-      document.getElementById("left").removeChild(treeContainer);
+      //document.getElementById("left").removeChild(treeContainer);
+      treeContainer.style = "height: 0;"
+
+      var tableButton = document.getElementById("tableButton");
+      tableButton.innerHTML = "Go back to Spotify Tree";
+      tableButton.setAttribute("onClick", "AE.spotifyTree()");
+
       var tableContainer = document.getElementById("table-container");
 
       // Crea un elemento <table> y un elemento <tbody>
@@ -915,9 +960,10 @@
       var viewerWidth = $(window).width() - rightPaneWidth;
       var viewerHeight = $(window).height() - topPaneHeight;
       tabla.setAttribute("border", "2");
-      tabla.setAttribute("id", "tabla");
+      tabla.setAttribute("id", "table");
       tableContainer.setAttribute("style","width: " + viewerWidth + "px; height: " + viewerHeight + "px; overflow: auto");
-  }
+    }
+
     function resizeTable(){
       var tabla = document.getElementById("tabla");
       var rightPaneWidth = 350;
@@ -930,6 +976,80 @@
 
       }
     }
+
+    function init_deezer() {
+      var url = "http://musicovery.com/api/V3/track.php?fct=getsimilar&id=deezer:track:2162450&popularitymin=1&popularitymax=50&songsnumber=25&bucket=id:deezer&limittobucket=true";
+      console.log(currentApi.getDeezer(url));
+      /*<script src="http://cdn-files.deezer.com/js/min/dz.js"></script>*/
+      // Obtener la referencia del elemento body
+      var treeContainer = document.getElementById("tree-container");
+      document.getElementById("left").removeChild(treeContainer);
+      var tableContainer = document.getElementById("deezer-container");
+      var aux = document.createElement("p");
+      aux.innerHTML = "Deezer Creado";
+      tableContainer.appendChild(aux);
+
+    }
+
+    function init_lastfm(){
+      var container = document.getElementById("lastfm-container");
+
+      var treeContainer = document.getElementById("tree-container");
+      //document.getElementById("left").removeChild(treeContainer);
+      //treeContainer.style = "height: 0;"
+
+      var tableButton = document.getElementById("lastfmButton");
+      lastfmButton.innerHTML = "Go back to Spotify Tree";
+      lastfmButton.setAttribute("onClick", "AE.spotifyTree()");
+
+      var trackName = "Moonlight Sonata";
+      var artistName = "Beethoven";
+      new Promise(function (resolve, reject) {
+          lastfm.track.getInfo({track: trackName, artist:artistName}, {success: function(data){
+              /* Use data. */
+              var track = data;
+              resolve(getArtistInfo(data, artistName))
+            }, error: function(code, message){
+              /* Show error message. */
+            }
+          })
+      });
+    }
+    function getArtistInfo(track, artistName){
+      var artist;
+      new Promise(function (resolve, reject) {
+          lastfm.artist.getInfo({artist:artistName}, {success: function(data){
+              /* Use data. */
+              var artist = data;
+              resolve(initLastfmTree(track, artist))
+            }, error: function(code, message){
+              /* Show error message. */
+            }
+          })
+      });
+
+    }
+    function initLastfmTree(track, artist) {
+      initRootWithLastfmTrack(track, artist);
+      var trackName = track.track.name;
+    }
+
+    function drawLastfmTree(trackName, artistName){
+      /* Load some track info. */
+      console.log(trackName);
+      console.log(artistName);
+      return new Promise(function (resolve, reject){
+        lastfm.track.getSimilar({track: trackName, artist:artistName, limit: numberOfArtistsToShow}, {success: function(data){
+            /* Use data. */
+            console.log(data);
+            resolve(data);
+          }, error: function(code, message){
+            /* Show error message. */
+          }
+        })
+      });
+    }
+
     window.AE = {
         getSuitableImage: getSuitableImage,
         getRelated: getRelated,
@@ -945,6 +1065,10 @@
         createPlaylistModal: createPlaylistModal,
         createPlaylist: createPlaylist,
         logout: logout,
-        create_table: create_table
+        create_table: create_table,
+        spotifyTree: spotifyTree,
+        init_deezer: init_deezer,
+        init_lastfm: init_lastfm,
+        drawLastfmTree: drawLastfmTree
     };
 })();

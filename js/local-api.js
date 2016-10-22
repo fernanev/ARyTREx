@@ -86,6 +86,13 @@ var localProxyApi = function (serverBasePath) {
     // })
   };
 
+  var getDeezer = function(deezer) {
+    var url = deezer;
+    return $.ajax({
+        url: url
+    })
+  };
+
   return {
     getArtistRelatedArtists: getArtistRelatedArtists,
     getArtist: getArtist,
@@ -95,7 +102,8 @@ var localProxyApi = function (serverBasePath) {
     getRecommendationTracks: getRecommendationTracks,
     getTrack: getTrack,
     getAlbum: getAlbum,
-    searchTracks: searchTracks
+    searchTracks: searchTracks,
+    getDeezer: getDeezer
   }
 
 };

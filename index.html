@@ -166,12 +166,20 @@
            <button type="button" class="btn btn-primary btn-sm" onClick="AE.createPlaylistModal()">
              Create Playlist
            </button>
-           <button type="button" class="btn btn-primary btn-sm" onClick="AE.create_table()">
+           <button type="button" id="tableButton" class="btn btn-primary btn-sm" onClick="AE.create_table()">
              Create Table
+           </button>
+           <!-- <button type="button" id="deezerButton" class="btn btn-primary btn-sm" onClick="AE.init_deezer()">
+             Deezer API
+           </button> -->
+           <button type="button" id="lastfmButton" class="btn btn-primary btn-sm" onClick="AE.init_lastfm()">
+             LastFM API
            </button>
          </div>
       </div>
       <div id="table-container"></div>
+      <!-- <div id="deezer-container"></div> -->
+      <div id="lastfm-container"></div>
 
       <!-- Create Playlist Modal -->
       <div class="modal fade" id="createPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -232,6 +240,9 @@
   <script src="./bower_components/knockout/dist/knockout.js"></script>
   <script src="./js/lib/jquery-1.10.2.min.js"></script>
   <script src="./js/lib/jquery-ui-1.11.1.min.js"></script>
+  <script type="text/javascript" src="./js/lib/lastfm.api.md5.js"></script>
+  <script type="text/javascript" src="./js/lib/lastfm.api.js"></script>
+  <script type="text/javascript" src="./js/lib/lastfm.api.cache.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
   <script src="https://d3js.org/d3.v3.min.js"></script>
   <script src="js/util.js"></script>
