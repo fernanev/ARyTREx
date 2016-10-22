@@ -144,7 +144,7 @@ var dndTree = (function() {
             if (!node.children) {
                 node.children = []
             }
-            console.log(tracks.similartracks);
+            //console.log(tracks.similartracks);
             tracks.similartracks.track.forEach(function(track) {
                 node.children.push(
                     {
@@ -318,7 +318,7 @@ var dndTree = (function() {
 
         nodeEnter.append("image")
             .attr("xlink:href", function(d) {
-    console.log(d);
+    //console.log(d);
                 if (isArtist(d) && !isTrack(d)) {
                   return AE.getSuitableImage(d.artist.images);
                 } else if(isTrack(d) && !isArtist(d)){
