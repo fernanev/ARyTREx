@@ -34,10 +34,6 @@ And you also need to serve the files at the root of the project. You can use Sim
 python -m SimpleHTTPServer
 ```
 
-App
-===
-<img src="./img/ScreenShot.png" width="750px"/>
-
 Consumed Libraries:
 --------------
 * [d3](http://d3js.org/)
